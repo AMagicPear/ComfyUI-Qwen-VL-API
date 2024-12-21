@@ -270,13 +270,57 @@ class QWenVL_API_S_Multi_Zho:
         
         return (chat_history, )
 
+class QWenPlus_Chat:
+
+    def __init__(self):
+        self.api_key = get_qwenvl_api_key()
+        if self.api_key is not None:
+            dashscope.api_key=self.api_key
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "prompt": ("STRING", {"default": "", "multiline": True}),
+                "model_name": (["qwen-plus"],),
+                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}), 
+            }
+        }
+
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("text",)
+    FUNCTION = "qwen_generation"
+
+    CATEGORY = "Zho模块组/💫QWen"
+
+    def qwen_generation(self, prompt, model_name, seed):
+        if not self.api_key:
+            raise ValueError("API key is required")
+        messages = [
+            {'role': 'system', 'content': '你是一个提示词翻译器，你会将接下来用户输入的文本描述翻译成英文版本的适合Stable Diffusion输入的提示词。不需要额外的描述信息，只需要回复单纯正向提示词即可。'},
+            {'role': 'user', 'content': prompt}
+        ]
+        torch.manual_seed(seed)
+
+        response = dashscope.Generation.call(
+            api_key= self.api_key,
+            model=model_name,
+            messages=messages,
+            seed=seed,
+            result_format='text',
+        )
+        
+        return (response.output.text, )
+
 
 NODE_CLASS_MAPPINGS = {
     "QWenVL_API_S_Zho": QWenVL_API_S_Zho,
     "QWenVL_API_S_Multi_Zho": QWenVL_API_S_Multi_Zho,
+    "QWenPrompt_Translator": QWenPlus_Chat,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "QWenVL_API_S_Zho": "㊙️QWenVL_Zho",
     "QWenVL_API_S_Multi_Zho": "㊙️QWenVL_Chat_Zho",
+    "QWenPrompt_Translator": "🍐通义千问提示词翻译",
 }
